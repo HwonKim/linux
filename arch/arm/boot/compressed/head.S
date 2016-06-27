@@ -114,6 +114,7 @@
 #endif
 		.endm
 
+// @hwon : 커널 분석 start //
 		.section ".start", #alloc, #execinstr
 /*
  * sort out different calling conventions
