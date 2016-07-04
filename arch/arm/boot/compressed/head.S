@@ -114,8 +114,21 @@
 #endif
 		.endm
 
-// @hwon : 커널 분석 start //
+/* 	커널 분석 start */
+
 		.section ".start", #alloc, #execinstr
+/* #hwon
+	.section ".start", #alloc, #execinstr
+	- .section ".start" -> section 지정 방식에는 
+						1. .section name[, "flags"[, @type]]과 
+						2. .section "name"[, flags...] 
+						두 가지 방식 존재.
+						ELF Traget을 위해 2번째 방식 사용.
+	- #alloc, #execinstr -> flags...
+						#alloc : section is allocatable
+						#write : section is writable
+						#execinstr : section is executable
+	hwon */
 /*
  * sort out different calling conventions
  */
@@ -125,17 +138,60 @@
 		 * As of today (2014) that's exactly the members of the A and R
 		 * classes.
 		 */
+
+/* #hwon
+	- align -> 주소를 2^n 바이트 단위로 정렬
+			  default : 2^2 = 4bytes = 32bit,
+			  32bit 단위로 주소를 읽어들임.
+	hwon*/
+
  AR_CLASS(	.arm	)
+
+/* #hwon
+	AR_CLASS( .arm ) 
+	- AR_CLASS() -> arch/arm/include/asm/unified.h에 정의된 매크로
+	  CONFIG_CPU_V7M이 정의 되어 있으면, 명령어 실행 아니면 무시.
+
+	- .arm	-> code32로 실행하겠다.
+
+	hwon*/
+
+
+/* #hwon --- Boot Loader 제외 시작점--- hwon */
 start:
 		.type	start,#function
 		.rept	7
 		__nop
 		.endr
+
+/* #hwon
+	- start :					-> start 라벨 설정
+	- .type start, #function	-> start는 fucntion이다
+	- .rept 7 ~ .endr			-> ~를 7번 반복한다.
+	__nop						-> ./efi-header.S에 정의된 매크로. CONFIG_EFI_STUB 설정 값에 따라 달라짐
+								  CONFIG_EFI_STUB : UEFI 부팅을 사용할 때 설정 됨. BIOS를 대체하는 펌웨어 규격
+
+								__nop 매크로 7번 반복 이유 :
+								부트로더 중 하나의 부트로더가 0x00부터 시작 안하고 0x20부터 시작을 함
+								그래서 의미 없는 코드를 실행하여 맞춰줌...
+								__nop : 4byte x 7 = 28byte, 아래 mov r0, r0 명령어까지 합치면 32byte
+								즉, 0x20 완성
+	hwon*/
    ARM(		mov	r0, r0		)
    ARM(		b	1f		)
  THUMB(		badr	r12, 1f		)
  THUMB(		bx	r12		)
 
+/* #hwon
+	- ARM() 매크로				-> ARM 명령어일 때 실행
+	- THUMB() 매크로			-> THUMB 명령어 일 때 실행
+								CONFIG_THUMB2_KERNEL 설정 되어 있을 경우 THUMB 실행 아닐 경우 ARM 실행
+								arch/arm/include/asm/unified.h에 정의 되어 있음.
+	- mov	r0, r0				-> 아무 의미 없다.
+	- b 1f						-> 1: 레이블로 분기.
+								  f는 다음에 나오는 1 레이블로 분기하라는 의미. foward
+								
+	hwon*/
 		.word	_magic_sig	@ Magic numbers to help the loader
 		.word	_magic_start	@ absolute load/run zImage address
 		.word	_magic_end	@ zImage end address
@@ -144,13 +200,37 @@ start:
  THUMB(		.thumb			)
 1:		__EFI_HEADER
 
+/* #hwon 
+	- 1: __EFI_HEADER 			-> 1: 레이블이고, __EFI_HEADER 매크로 호출.
+								  __EFI_HEADER는./efi-header.S에 정의
+								  CONFIG_EFI_STUB 안되어 있으면 아무 의미 없다.
+
+	hwon*/
  ARM_BE8(	setend	be		)	@ go BE8 if compiled for BE8
  AR_CLASS(	mrs	r9, cpsr	)
+
+
+/* #hwon
+	ARM_BE8( setend be)
+	- ARM_BE8					-> arch/arm/include/asm/assembler.h에 존재
+								CONFIG_CPU_ENDIAN_BE8 설정 되어 있으면 코드 실행 아니면 무시
+	- setend be					-> big endian으로 설정CPSR의 E bit(endian bit)를 설정함
+	- mrs r9, cpsr				-> cpsr을 r9에 복사
+	hwon*/
+
 #ifdef CONFIG_ARM_VIRT_EXT
 		bl	__hyp_stub_install	@ get into SVC mode, reversibly
 #endif
 		mov	r7, r1			@ save architecture ID
 		mov	r8, r2			@ save atags pointer
+
+/* #hwon
+	CONFIG_ARM_VIRT_EXT			-> Native support for the ARM Virtualization Extensions
+	- bl __hyp_stub_install		-> lr에 복귀주소 저장하고 __hyp_stub_install 함수로 분기
+								  궁금하면 들어가봐라... 위치는 arch/arm/kernel/hyp-stub.S에 존재	
+	mov r7, r1					-> r7에 r1저장(아키텍쳐 ID 저장)
+	mov r8, r2					-> r8에 r2저장(atags pointer 저장)
+	hwon*/
 
 #ifndef CONFIG_CPU_V7M
 		/*
