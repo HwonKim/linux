@@ -86,6 +86,12 @@
 #endif
 #endif /* LINKER_SCRIPT */
 
+/* #hwon
+	ENTRY가 다른 곳에서 정의되지 않았다면,
+	- globl name ASM_NL					-> name으로 전역적인 이름 설정
+										ASM_NL : ; 왜냐하면, 몇몇 툴체인 '`' 사용해서
+	hwon*/
+
 #ifndef WEAK
 #define WEAK(name)	   \
 	.weak name ASM_NL   \
@@ -96,6 +102,10 @@
 #define END(name) \
 	.size name, .-name
 #endif
+
+/* #hwon
+   - .size name, .-name 어셈블러에게 name이 얼마나 많은 space를 사용하는지 알려주기 위해 
+	hwon */
 
 /* If symbol 'name' is treated as a subroutine (gets called, and returns)
  * then please use ENDPROC to mark 'name' as STT_FUNC for the benefit of

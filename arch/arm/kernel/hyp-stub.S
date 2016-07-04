@@ -88,6 +88,13 @@ ENTRY(__hyp_stub_install)
 	store_primary_cpu_mode	r4, r5, r6
 ENDPROC(__hyp_stub_install)
 
+/* #hwon
+	- ENTRY(__hyp_stub_insatll) 			-> 함수의 시작
+	- store_primary_cpu_mode r4, r5, r6		-> store_primary_cpu_mode 매크로 호출하면서 r4, r5, r6 레지스터 사용
+	- ENDPROC(__hyp_stub_install)			-> 함수의 끝
+
+	ENTRY(), ENDPRIC()						-> /include/linux/linkage.h에 존재
+	hwon*/
 	@ fall through...
 
 @ Secondary CPUs should call here

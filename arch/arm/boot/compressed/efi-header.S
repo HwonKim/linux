@@ -21,6 +21,14 @@
 #endif
 		.endm
 
+/* #hwon 
+	- .macro __nop			-> 매크로 이름 __nop
+	- .inst					-> CONFIG_EFI_STUB가 정의 되어 있으면 이 명령어 실행
+							   .inst는 뒤에 나오는 값을 명령어 자체로 실행
+							   'M' | ('Z' << 8) | (0x1310 << 16) 이 값이 tstne r0, #0x4d000을 의미
+	- mov r0, r0 			-> 아니면 mov r0, r0 실행
+	- .endm 				-> 매크로 끝
+hwon*/
 		.macro	__EFI_HEADER
 #ifdef CONFIG_EFI_STUB
 		b	__efi_start
